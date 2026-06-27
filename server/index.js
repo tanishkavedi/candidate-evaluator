@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
-
+const analyzeRoute = require("./routes/analyze");
 
 dotenv.config();
 
@@ -16,6 +16,9 @@ app.get("/", (req , res) => {
   res.json({ message: "Resume Analyzer API is running" });
 
 });
+
+
+app.use("/api/analyze", analyzeRoute);
 
 
 const PORT = process.env.PORT || 5000;
