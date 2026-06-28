@@ -1,11 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
-const pdfParse = require("pdf-parse");
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype === "application/pdf") {
       cb(null, true);
@@ -21,6 +20,7 @@ router.post("/", upload.single("resume"), async (req, res) => {
   }
 
   try {
+    const pdfParse = require("pdf-parse/lib/pdf-parse.js");
     const data = await pdfParse(req.file.buffer);
     const text = data.text.trim();
 
@@ -31,7 +31,7 @@ router.post("/", upload.single("resume"), async (req, res) => {
     res.json({ text });
   } catch (error) {
     console.error("PDF parse error:", error.message);
-    res.status(500).json({ error: "Failed to read PDF file" });
+    res.status(500).json({ error: "Failed to read PDF file: " + error.message });
   }
 });
 
