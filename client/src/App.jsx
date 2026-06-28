@@ -18,10 +18,20 @@ function App() {
     const formData = new FormData();
     formData.append("resume", file);
 
-    axios
-      .post("http://localhost:5000/api/upload", formData)
-      .then((res) => setResumeText(res.data.text))
-      .catch(() => setError("Failed to read PDF. Try pasting text instead."));
+    
+     axios
+  .post("https://resume-analyzer-api-mgan.onrender.com/api/upload", formData)
+  .then((res) => {
+    if (res.data.text) {
+      setResumeText(res.data.text);
+    } else {
+      setError("Could not extract text from PDF.");
+    }
+  })
+  .catch((err) => {
+    console.error("Upload error:", err);
+    setError("Failed to upload PDF: " + (err.response?.data?.error || err.message));
+  });
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
