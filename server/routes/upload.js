@@ -20,8 +20,11 @@ router.post("/", upload.single("resume"), async (req, res) => {
   }
 
   try {
-    const pdfParse = require("pdf-parse/lib/pdf-parse.js");
-    const data = await pdfParse(req.file.buffer);
+    const pdfParse = require("pdf-parse");
+    const data = await pdfParse(req.file.buffer, {
+      max: 0
+    });
+    
     const text = data.text.trim();
 
     if (!text || text.length < 50) {
