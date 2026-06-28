@@ -1,15 +1,38 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import axios from "axios";
 import { useDropzone } from "react-dropzone";
 
+const API_URL = "https://resume-analyzer-api-mgan.onrender.com";
+
 function App() {
-  const [resumeText, setResumeText] = useState("");
-  const [jobDescription, setJobDescription] = useState("");
+  const [resumeText, setResumeText] = useState(() => {
+    return sessionStorage.getItem("resumeText") || "";
+  });
+  const [jobDescription, setJobDescription] = useState(() => {
+    return sessionStorage.getItem("jobDescription") || "";
+  });
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("paste");
   const [fileName, setFileName] = useState("");
+
+  // Save to sessionStorage on change
+  useEffect(() => {
+    sessionStorage.setItem("resumeText", resumeText);
+  }, [resumeText]);
+
+  useEffect(() => {
+    sessionStorage.setItem("jobDescription", jobDescription);
+  }, [jobDescription]);
+
+  const handleClear = () => {
+    setResumeText("");
+    setFileName("");
+    setResult(null);
+    setError("");
+    sessionStorage.removeItem("resumeText");
+  };
 
   const onDrop = useCallback((acceptedFiles) => {
     const file = acceptedFiles[0];
@@ -18,20 +41,19 @@ function App() {
     const formData = new FormData();
     formData.append("resume", file);
 
-    
-     axios
-  .post("https://resume-analyzer-api-mgan.onrender.com/api/upload", formData)
-  .then((res) => {
-    if (res.data.text) {
-      setResumeText(res.data.text);
-    } else {
-      setError("Could not extract text from PDF.");
-    }
-  })
-  .catch((err) => {
-    console.error("Upload error:", err);
-    setError("Failed to upload PDF: " + (err.response?.data?.error || err.message));
-  });
+    axios
+      .post(`${API_URL}/api/upload`, formData)
+      .then((res) => {
+        if (res.data.text) {
+          setResumeText(res.data.text);
+          setError("");
+        } else {
+          setError("Could not extract text from PDF.");
+        }
+      })
+      .catch((err) => {
+        setError("Failed to upload PDF: " + (err.response?.data?.error || err.message));
+      });
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -55,7 +77,7 @@ function App() {
     setResult(null);
 
     try {
-      const res = await axios.post("http://localhost:5000/api/analyze", {
+      const res = await axios.post(`${API_URL}/api/analyze`, {
         resumeText,
         jobDescription,
       });
@@ -96,13 +118,21 @@ function App() {
 
       <div className="max-w-5xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column - Input */}
+          {/* Left Column */}
           <div className="space-y-4">
             {/* Resume Input */}
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-              <h2 className="text-sm font-semibold text-gray-300 mb-3">
-                Your Resume
-              </h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold text-gray-300">Your Resume</h2>
+                {resumeText && (
+                  <button
+                    onClick={handleClear}
+                    className="text-xs text-red-400 hover:text-red-300 border border-red-400/20 hover:border-red-400/40 px-2 py-1 rounded-lg transition-colors"
+                  >
+                    ✕ Clear Resume
+                  </button>
+                )}
+              </div>
 
               {/* Tabs */}
               <div className="flex gap-2 mb-4">
@@ -150,12 +180,8 @@ function App() {
                     <p className="text-sm text-green-400">{fileName}</p>
                   ) : (
                     <>
-                      <p className="text-sm text-gray-400">
-                        Drop your PDF here
-                      </p>
-                      <p className="text-xs text-gray-600 mt-1">
-                        or click to browse
-                      </p>
+                      <p className="text-sm text-gray-400">Drop your PDF here</p>
+                      <p className="text-xs text-gray-600 mt-1">or click to browse</p>
                     </>
                   )}
                 </div>
@@ -201,9 +227,7 @@ function App() {
             {!result && !loading && (
               <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 flex flex-col items-center justify-center h-full min-h-64 text-center">
                 <div className="text-5xl mb-3">🎯</div>
-                <p className="text-gray-400 text-sm">
-                  Your analysis will appear here
-                </p>
+                <p className="text-gray-400 text-sm">Your analysis will appear here</p>
                 <p className="text-gray-600 text-xs mt-1">
                   Add your resume and job description to get started
                 </p>
@@ -222,12 +246,8 @@ function App() {
                 {/* Score Card */}
                 <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-gray-300">
-                      Match Score
-                    </h3>
-                    <span
-                      className={`text-2xl font-bold ${getScoreColor(result.matchScore)}`}
-                    >
+                    <h3 className="text-sm font-semibold text-gray-300">Match Score</h3>
+                    <span className={`text-2xl font-bold ${getScoreColor(result.matchScore)}`}>
                       {result.matchScore}%
                     </span>
                   </div>
@@ -243,26 +263,18 @@ function App() {
                 {/* Strengths & Weaknesses */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-                    <h3 className="text-xs font-semibold text-green-400 mb-2">
-                      ✓ Strengths
-                    </h3>
+                    <h3 className="text-xs font-semibold text-green-400 mb-2">✓ Strengths</h3>
                     <ul className="space-y-1">
                       {result.strengths.map((s, i) => (
-                        <li key={i} className="text-xs text-gray-400">
-                          • {s}
-                        </li>
+                        <li key={i} className="text-xs text-gray-400">• {s}</li>
                       ))}
                     </ul>
                   </div>
                   <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-                    <h3 className="text-xs font-semibold text-red-400 mb-2">
-                      ✗ Weaknesses
-                    </h3>
+                    <h3 className="text-xs font-semibold text-red-400 mb-2">✗ Weaknesses</h3>
                     <ul className="space-y-1">
                       {result.weaknesses.map((w, i) => (
-                        <li key={i} className="text-xs text-gray-400">
-                          • {w}
-                        </li>
+                        <li key={i} className="text-xs text-gray-400">• {w}</li>
                       ))}
                     </ul>
                   </div>
@@ -270,15 +282,10 @@ function App() {
 
                 {/* Missing Keywords */}
                 <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-                  <h3 className="text-xs font-semibold text-yellow-400 mb-2">
-                    Missing Keywords
-                  </h3>
+                  <h3 className="text-xs font-semibold text-yellow-400 mb-2">Missing Keywords</h3>
                   <div className="flex flex-wrap gap-2">
                     {result.missingKeywords.map((k, i) => (
-                      <span
-                        key={i}
-                        className="text-xs bg-yellow-400/10 text-yellow-400 border border-yellow-400/20 px-2 py-1 rounded-md"
-                      >
+                      <span key={i} className="text-xs bg-yellow-400/10 text-yellow-400 border border-yellow-400/20 px-2 py-1 rounded-md">
                         {k}
                       </span>
                     ))}
@@ -287,15 +294,11 @@ function App() {
 
                 {/* Improved Bullets */}
                 <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-                  <h3 className="text-xs font-semibold text-blue-400 mb-3">
-                    Improved Bullet Points
-                  </h3>
+                  <h3 className="text-xs font-semibold text-blue-400 mb-3">Improved Bullet Points</h3>
                   <div className="space-y-3">
                     {result.improvedBullets.map((b, i) => (
                       <div key={i} className="space-y-1">
-                        <p className="text-xs text-gray-600 line-through">
-                          {b.original}
-                        </p>
+                        <p className="text-xs text-gray-600 line-through">{b.original}</p>
                         <p className="text-xs text-gray-300">{b.improved}</p>
                       </div>
                     ))}
@@ -304,9 +307,7 @@ function App() {
 
                 {/* Overall Advice */}
                 <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
-                  <h3 className="text-xs font-semibold text-blue-400 mb-1">
-                    Overall Advice
-                  </h3>
+                  <h3 className="text-xs font-semibold text-blue-400 mb-1">Overall Advice</h3>
                   <p className="text-xs text-gray-400">{result.overallAdvice}</p>
                 </div>
               </>
