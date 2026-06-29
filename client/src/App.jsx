@@ -52,7 +52,7 @@ useEffect(() => {
     sessionStorage.removeItem("fileName");
   };
 
-  const onDrop = useCallback((acceptedFiles) => {
+  const onDrop = (acceptedFiles) => {
     const file = acceptedFiles[0];
     if (!file) return;
     setFileName(file.name);
@@ -72,7 +72,7 @@ useEffect(() => {
       .catch((err) => {
         setError("Failed to upload PDF: " + (err.response?.data?.error || err.message));
       });
-  }, []);
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
