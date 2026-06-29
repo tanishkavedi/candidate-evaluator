@@ -14,7 +14,10 @@ function App() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState("paste");
+  const [activeTab, setActiveTab] = useState(() => {
+  const savedText = sessionStorage.getItem("resumeText");
+  return savedText ? "paste" : "paste";
+});
   const [fileName, setFileName] = useState("");
 
   // Save to sessionStorage on change
@@ -166,6 +169,15 @@ function App() {
                   className="w-full h-48 bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-gray-200 placeholder-gray-600 resize-none focus:outline-none focus:border-blue-500 transition-colors"
                 />
               ) : (
+
+                 <>
+    {resumeText && !fileName && (
+      <p className="text-xs text-yellow-400 mb-2">
+        ⚠ Resume loaded from previous session — switch to Paste Text to view it
+      </p>
+    )}
+
+    
                 <div
                   {...getRootProps()}
                   className={`h-48 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer transition-colors ${
@@ -174,6 +186,8 @@ function App() {
                       : "border-gray-700 hover:border-gray-600"
                   }`}
                 >
+
+
                   <input {...getInputProps()} />
                   <div className="text-4xl mb-2">📄</div>
                   {fileName ? (
@@ -185,6 +199,7 @@ function App() {
                     </>
                   )}
                 </div>
+                </>
               )}
 
               {resumeText && activeTab === "upload" && (
