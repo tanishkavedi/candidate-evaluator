@@ -72,11 +72,13 @@ function App() {
     maxFiles: 1,
   });
 
-  const handleAnalyze = async () => {
-    if (!resumeText.trim()) {
-      setError("Please add your resume first.");
-      return;
-    }
+ const handleAnalyze = async () => {
+  console.log("resumeText length:", resumeText.length);
+  console.log("sessionStorage text:", sessionStorage.getItem("resumeText")?.length);
+  if (!resumeText.trim()) {
+    setError("Please add your resume first.");
+    return;
+  }
     if (!jobDescription.trim()) {
       setError("Please add a job description.");
       return;
