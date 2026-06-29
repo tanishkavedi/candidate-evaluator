@@ -5,57 +5,34 @@ import { useDropzone } from "react-dropzone";
 const API_URL = "https://resume-analyzer-api-mgan.onrender.com";
 
 function App() {
-  const [resumeText, setResumeText] = useState(() => {
-    return sessionStorage.getItem("resumeText") || "";
-  });
-  const [jobDescription, setJobDescription] = useState(() => {
-    return sessionStorage.getItem("jobDescription") || "";
-  });
+  const [resumeText, setResumeText] = useState("");
+  const [jobDescription, setJobDescription] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState(() => {
-  const savedText = sessionStorage.getItem("resumeText");
-  return savedText ? "paste" : "paste";
-});
-  const [fileName, setFileName] = useState(() => {
-  return sessionStorage.getItem("fileName") || "";
-});
+  const [activeTab, setActiveTab] = useState("paste");
+  const [fileName, setFileName] = useState("");
+  const [uploading, setUploading] = useState(false);
 
-  // Save to sessionStorage on change
-
-  
-useEffect(() => {
-  fetch(`${API_URL}/`).catch(() => {});
-}, []);
-
-
-
+  // Wake up server on load
   useEffect(() => {
-    sessionStorage.setItem("resumeText", resumeText);
-  }, [resumeText]);
-
-  useEffect(() => {
-    sessionStorage.setItem("jobDescription", jobDescription);
-  }, [jobDescription]);
-
-  useEffect(() => {
-  sessionStorage.setItem("fileName", fileName);
-}, [fileName]);
+    fetch(`${API_URL}/`).catch(() => {});
+  }, []);
 
   const handleClear = () => {
     setResumeText("");
     setFileName("");
     setResult(null);
     setError("");
-    sessionStorage.removeItem("resumeText");
-    sessionStorage.removeItem("fileName");
   };
 
-  const onDrop = (acceptedFiles) => {
+  const onDrop = useCallback((acceptedFiles) => {
     const file = acceptedFiles[0];
     if (!file) return;
     setFileName(file.name);
+    setUploading(true);
+    setError("");
+
     const formData = new FormData();
     formData.append("resume", file);
 
@@ -70,9 +47,13 @@ useEffect(() => {
         }
       })
       .catch((err) => {
-        setError("Failed to upload PDF: " + (err.response?.data?.error || err.message));
+        setError("Failed to upload PDF. Please try again or paste text instead.");
+        setFileName("");
+      })
+      .finally(() => {
+        setUploading(false);
       });
-  };
+  }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -80,13 +61,11 @@ useEffect(() => {
     maxFiles: 1,
   });
 
- const handleAnalyze = async () => {
-  console.log("resumeText length:", resumeText.length);
-  console.log("sessionStorage text:", sessionStorage.getItem("resumeText")?.length);
-  if (!resumeText.trim()) {
-    setError("Please add your resume first.");
-    return;
-  }
+  const handleAnalyze = async () => {
+    if (!resumeText.trim()) {
+      setError("Please add your resume first.");
+      return;
+    }
     if (!jobDescription.trim()) {
       setError("Please add a job description.");
       return;
@@ -123,7 +102,6 @@ useEffect(() => {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      {/* Header */}
       <div className="border-b border-gray-800 px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div>
@@ -138,9 +116,7 @@ useEffect(() => {
 
       <div className="max-w-5xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column */}
           <div className="space-y-4">
-            {/* Resume Input */}
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-semibold text-gray-300">Your Resume</h2>
@@ -154,7 +130,6 @@ useEffect(() => {
                 )}
               </div>
 
-              {/* Tabs */}
               <div className="flex gap-2 mb-4">
                 <button
                   onClick={() => setActiveTab("paste")}
@@ -186,15 +161,6 @@ useEffect(() => {
                   className="w-full h-48 bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-gray-200 placeholder-gray-600 resize-none focus:outline-none focus:border-blue-500 transition-colors"
                 />
               ) : (
-
-                 <>
-    {resumeText && !fileName && (
-      <p className="text-xs text-yellow-400 mb-2">
-        ⚠ Resume loaded from previous session — switch to Paste Text to view it
-      </p>
-    )}
-
-    
                 <div
                   {...getRootProps()}
                   className={`h-48 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer transition-colors ${
@@ -203,11 +169,11 @@ useEffect(() => {
                       : "border-gray-700 hover:border-gray-600"
                   }`}
                 >
-
-
                   <input {...getInputProps()} />
                   <div className="text-4xl mb-2">📄</div>
-                  {fileName ? (
+                  {uploading ? (
+                    <p className="text-sm text-blue-400">Extracting text...</p>
+                  ) : fileName ? (
                     <p className="text-sm text-green-400">{fileName}</p>
                   ) : (
                     <>
@@ -216,17 +182,15 @@ useEffect(() => {
                     </>
                   )}
                 </div>
-                </>
               )}
 
-              {resumeText && activeTab === "upload" && (
+              {resumeText && activeTab === "upload" && !uploading && (
                 <p className="text-xs text-green-400 mt-2">
                   ✓ Resume text extracted successfully
                 </p>
               )}
             </div>
 
-            {/* Job Description */}
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
               <h2 className="text-sm font-semibold text-gray-300 mb-3">
                 Job Description
@@ -254,7 +218,6 @@ useEffect(() => {
             </button>
           </div>
 
-          {/* Right Column - Results */}
           <div className="space-y-4">
             {!result && !loading && (
               <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 flex flex-col items-center justify-center h-full min-h-64 text-center">
@@ -275,7 +238,6 @@ useEffect(() => {
 
             {result && (
               <>
-                {/* Score Card */}
                 <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-sm font-semibold text-gray-300">Match Score</h3>
@@ -292,7 +254,6 @@ useEffect(() => {
                   <p className="text-xs text-gray-500 mt-3">{result.summary}</p>
                 </div>
 
-                {/* Strengths & Weaknesses */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
                     <h3 className="text-xs font-semibold text-green-400 mb-2">✓ Strengths</h3>
@@ -312,7 +273,6 @@ useEffect(() => {
                   </div>
                 </div>
 
-                {/* Missing Keywords */}
                 <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
                   <h3 className="text-xs font-semibold text-yellow-400 mb-2">Missing Keywords</h3>
                   <div className="flex flex-wrap gap-2">
@@ -324,7 +284,6 @@ useEffect(() => {
                   </div>
                 </div>
 
-                {/* Improved Bullets */}
                 <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
                   <h3 className="text-xs font-semibold text-blue-400 mb-3">Improved Bullet Points</h3>
                   <div className="space-y-3">
@@ -337,7 +296,6 @@ useEffect(() => {
                   </div>
                 </div>
 
-                {/* Overall Advice */}
                 <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
                   <h3 className="text-xs font-semibold text-blue-400 mb-1">Overall Advice</h3>
                   <p className="text-xs text-gray-400">{result.overallAdvice}</p>
