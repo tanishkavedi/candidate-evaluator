@@ -26,34 +26,40 @@ function App() {
     setError("");
   };
 
-  const onDrop = useCallback((acceptedFiles) => {
-    const file = acceptedFiles[0];
-    if (!file) return;
-    setFileName(file.name);
-    setUploading(true);
-    setError("");
+const onDrop = useCallback(async (acceptedFiles) => {
+  const file = acceptedFiles[0];
+  if (!file) return;
+  setFileName(file.name);
+  setUploading(true);
+  setError("");
 
-    const formData = new FormData();
-    formData.append("resume", file);
+  const formData = new FormData();
+  formData.append("resume", file);
 
-    axios
-      .post(`${API_URL}/api/upload`, formData)
-      .then((res) => {
-        if (res.data.text) {
-          setResumeText(res.data.text);
-          setError("");
-        } else {
-          setError("Could not extract text from PDF.");
-        }
-      })
-      .catch((err) => {
-        setError("Failed to upload PDF. Please try again or paste text instead.");
-        setFileName("");
-      })
-      .finally(() => {
-        setUploading(false);
+  // Try up to 3 times
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const res = await axios.post(`${API_URL}/api/upload`, formData, {
+        timeout: 30000,
       });
-  }, []);
+      if (res.data.text) {
+        setResumeText(res.data.text);
+        setError("");
+        setUploading(false);
+        return;
+      }
+    } catch (err) {
+      console.log(`Attempt ${attempt} failed:`, err.message);
+      if (attempt < 3) {
+        await new Promise(r => setTimeout(r, 3000));
+      }
+    }
+  }
+
+  setError("Failed to upload PDF. Please paste text instead.");
+  setFileName("");
+  setUploading(false);
+}, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
