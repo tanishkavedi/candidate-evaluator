@@ -18,7 +18,9 @@ function App() {
   const savedText = sessionStorage.getItem("resumeText");
   return savedText ? "paste" : "paste";
 });
-  const [fileName, setFileName] = useState("");
+  const [fileName, setFileName] = useState(() => {
+  return sessionStorage.getItem("fileName") || "";
+});
 
   // Save to sessionStorage on change
   useEffect(() => {
@@ -29,12 +31,17 @@ function App() {
     sessionStorage.setItem("jobDescription", jobDescription);
   }, [jobDescription]);
 
+  useEffect(() => {
+  sessionStorage.setItem("fileName", fileName);
+}, [fileName]);
+
   const handleClear = () => {
     setResumeText("");
     setFileName("");
     setResult(null);
     setError("");
     sessionStorage.removeItem("resumeText");
+    sessionStorage.removeItem("fileName");
   };
 
   const onDrop = useCallback((acceptedFiles) => {
