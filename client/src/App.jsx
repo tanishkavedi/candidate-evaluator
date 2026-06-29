@@ -147,16 +147,7 @@ const onDrop = useCallback(async (acceptedFiles) => {
                 >
                   Paste Text
                 </button>
-                <button
-                  onClick={() => setActiveTab("upload")}
-                  className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
-                    activeTab === "upload"
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-800 text-gray-400 hover:text-white"
-                  }`}
-                >
-                  Upload PDF
-                </button>
+                
               </div>
 
               {activeTab === "paste" ? (
