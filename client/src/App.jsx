@@ -23,6 +23,14 @@ function App() {
 });
 
   // Save to sessionStorage on change
+
+  
+useEffect(() => {
+  fetch(`${API_URL}/`).catch(() => {});
+}, []);
+
+
+
   useEffect(() => {
     sessionStorage.setItem("resumeText", resumeText);
   }, [resumeText]);
