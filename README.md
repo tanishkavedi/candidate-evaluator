@@ -58,12 +58,5 @@ npm run dev
 Open `http://localhost:5173`
 
 
-*Setup frontend*
-bash
-cd client
-npm install
-npm run dev
 
-
-Open: http://localhost:5173
  
