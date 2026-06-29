@@ -5,8 +5,8 @@ import { useDropzone } from "react-dropzone";
 const API_URL = "https://resume-analyzer-api-mgan.onrender.com";
 
 function App() {
-  const [resumeText, setResumeText] = useState("");
-  const [jobDescription, setJobDescription] = useState("");
+  const [resumeText, setResumeText] = useState(() => sessionStorage.getItem("resumeText") || "");
+  const [jobDescription, setJobDescription] = useState(() => sessionStorage.getItem("jobDescription") || "");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -14,17 +14,27 @@ function App() {
   const [fileName, setFileName] = useState("");
   const [uploading, setUploading] = useState(false);
 
-  // Wake up server on load
+  useEffect(() => {
+  sessionStorage.setItem("resumeText", resumeText);
+}, [resumeText]);
+
+useEffect(() => {
+  sessionStorage.setItem("jobDescription", jobDescription);
+}, [jobDescription]);  
+
+
   useEffect(() => {
     fetch(`${API_URL}/`).catch(() => {});
   }, []);
 
-  const handleClear = () => {
-    setResumeText("");
-    setFileName("");
-    setResult(null);
-    setError("");
-  };
+ const handleClear = () => {
+  setResumeText("");
+  setFileName("");
+  setResult(null);
+  setError("");
+  sessionStorage.removeItem("resumeText");
+  sessionStorage.removeItem("jobDescription");
+};
 
 const onDrop = useCallback(async (acceptedFiles) => {
   const file = acceptedFiles[0];
