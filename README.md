@@ -26,36 +26,36 @@ Analyze your resume against any job description using AI. Get a match score, ide
 - Backend: Render
 
 
-## Installation
-
-*Clone the repo*
-
-bash
-
+**Clone the repo**
+```bash
 git clone https://github.com/tanishkavedi/candidate-evaluator.git
-
 cd candidate-evaluator
+```
 
-
-*Setup backend*
-
-bash
-
+**Setup backend**
+```bash
 cd server
-
 npm install
+```
 
-
-Create .env file in server folder:
-
+Create `.env` file in server folder:
+```
 OPENROUTER_API_KEY=your_key_here
-
 PORT=5000
+```
 
-
-bash
-
+```bash
 node index.js
+```
+
+**Setup frontend**
+```bash
+cd client
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`
 
 
 *Setup frontend*
